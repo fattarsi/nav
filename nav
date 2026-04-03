@@ -1,0 +1,153 @@
+#!/bin/bash
+# nav - fuzzy file browser
+# Type to filter, Enter to enter dir or open file
+# Backspace (empty) / Left to go up, Shift-Tab to exit, Ctrl-L toggle hidden, Esc to quit
+
+show_hidden=false
+trap 'rm -f /tmp/nav_up_$$' EXIT
+
+add_icons() {
+    while IFS= read -r entry; do
+        if [ "${entry%/}" != "$entry" ]; then
+            name="${entry%/}"
+            case "$name" in
+                .git)                     printf "\ue702 %s\n" "$entry" ;;
+                .github)                  printf "\ue702 %s\n" "$entry" ;;
+                node_modules)             printf "\ue718 %s\n" "$entry" ;;
+                src)                      printf "\uf07c %s\n" "$entry" ;;
+                test|tests|__tests__)     printf "\uf0c3 %s\n" "$entry" ;;
+                docs|doc)                 printf "\uf02d %s\n" "$entry" ;;
+                build|dist|out)           printf "\uf187 %s\n" "$entry" ;;
+                .config)                  printf "\uf013 %s\n" "$entry" ;;
+                *)                        printf "\uf115 %s\n" "$entry" ;;
+            esac
+        else
+            case "${entry,,}" in
+                *.lua)                    printf "\ue620 %s\n" "$entry" ;;
+                *.rs)                     printf "\ue7a8 %s\n" "$entry" ;;
+                *.go)                     printf "\ue626 %s\n" "$entry" ;;
+                *.py)                     printf "\ue73c %s\n" "$entry" ;;
+                *.js)                     printf "\ue74e %s\n" "$entry" ;;
+                *.ts)                     printf "\ue628 %s\n" "$entry" ;;
+                *.jsx|*.tsx)              printf "\ue7ba %s\n" "$entry" ;;
+                *.rb)                     printf "\ue739 %s\n" "$entry" ;;
+                *.sh|*.bash|*.zsh)        printf "\uf489 %s\n" "$entry" ;;
+                *.html)                   printf "\ue736 %s\n" "$entry" ;;
+                *.css)                    printf "\ue749 %s\n" "$entry" ;;
+                *.scss|*.sass)            printf "\ue749 %s\n" "$entry" ;;
+                *.json)                   printf "\ue60b %s\n" "$entry" ;;
+                *.toml)                   printf "\ue60b %s\n" "$entry" ;;
+                *.yaml|*.yml)             printf "\ue60b %s\n" "$entry" ;;
+                *.xml)                    printf "\uf121 %s\n" "$entry" ;;
+                *.md)                     printf "\ue73e %s\n" "$entry" ;;
+                *.txt)                    printf "\uf15c %s\n" "$entry" ;;
+                *.c)                      printf "\ue61e %s\n" "$entry" ;;
+                *.cpp|*.cc|*.cxx)         printf "\ue61d %s\n" "$entry" ;;
+                *.h|*.hpp)                printf "\ue61d %s\n" "$entry" ;;
+                *.java)                   printf "\ue738 %s\n" "$entry" ;;
+                *.png|*.jpg|*.jpeg|*.gif|*.bmp|*.webp|*.svg) printf "\uf1c5 %s\n" "$entry" ;;
+                *.mp4|*.mkv|*.avi|*.mov)  printf "\uf03d %s\n" "$entry" ;;
+                *.mp3|*.wav|*.flac|*.ogg) printf "\uf001 %s\n" "$entry" ;;
+                *.zip|*.tar|*.gz|*.7z|*.rar) printf "\uf1c6 %s\n" "$entry" ;;
+                *.pdf)                    printf "\uf1c1 %s\n" "$entry" ;;
+                *.lock)                   printf "\uf023 %s\n" "$entry" ;;
+                *.env*)                   printf "\uf013 %s\n" "$entry" ;;
+                *.git*)                   printf "\ue702 %s\n" "$entry" ;;
+                *.docker*|dockerfile*)    printf "\ue7b0 %s\n" "$entry" ;;
+                makefile)                 printf "\uf013 %s\n" "$entry" ;;
+                license*)                 printf "\uf0e3 %s\n" "$entry" ;;
+                readme*)                  printf "\ue73e %s\n" "$entry" ;;
+                *)                        printf "\uf15b %s\n" "$entry" ;;
+            esac
+        fi
+    done
+}
+
+while true; do
+    if $show_hidden; then
+        entries=$(ls -1ap | add_icons)
+    else
+        entries=$(ls -1ap | grep -v '^\.' | add_icons)
+    fi
+
+    sel=$(echo "$entries" | SHELL=/bin/bash fzf \
+        --reverse \
+        --no-sort \
+        --header="$(pwd)" \
+        --prompt="nav> " \
+        --expect="ctrl-l,shift-tab,tab,left,right" \
+        --bind="backward-eof:execute-silent(touch /tmp/nav_up_$$)+abort" \
+        --color="header:blue" \
+        --preview='
+            item=$(echo {} | sed "s/^[^ ]* //" | sed "s:/$::")
+            if [ -d "$item" ]; then
+                ls -1p "$item"
+            else
+                case "${item,,}" in
+                    *.png|*.jpg|*.jpeg|*.gif|*.bmp|*.webp|*.tiff|*.svg)
+                        kitty +kitten icat --clear --transfer-mode=memory --unicode-placeholder --stdin=no --place=${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}@0x0 "$item"
+                        ;;
+                    *)
+                        if file --mime-encoding "$item" 2>/dev/null | grep -q binary; then
+                            echo "[binary file]"
+                            file -b "$item" 2>/dev/null
+                            echo ""
+                            ls -lh "$item" 2>/dev/null | awk "{print \$5}"
+                        else
+                            head -100 "$item" 2>/dev/null
+                        fi
+                        ;;
+                esac
+            fi
+        ' \
+        --preview-window=right:75% \
+        )
+
+    rc=$?
+    key=$(echo "$sel" | head -1)
+    choice=$(echo "$sel" | sed -n '2p' | sed 's/^[^ ]* //')
+
+    # Esc or abort — check if backspace-on-empty triggered go-up
+    if [ $rc -eq 130 ] || { [ -z "$key" ] && [ -z "$choice" ]; }; then
+        if [ -f "/tmp/nav_up_$$" ]; then
+            rm -f "/tmp/nav_up_$$"
+            cd ..
+            continue
+        fi
+        break
+    fi
+
+    # Left — go up
+    if [ "$key" = "left" ]; then
+        cd ..
+        continue
+    fi
+
+    # Ctrl-L — toggle hidden
+    if [ "$key" = "ctrl-l" ]; then
+        if $show_hidden; then show_hidden=false; else show_hidden=true; fi
+        continue
+    fi
+
+    # Shift-Tab — exit nav, cd to current directory
+    if [ "$key" = "shift-tab" ]; then
+        break
+    fi
+
+    clean=$(echo "$choice" | sed 's:/$::')
+    [ -z "$clean" ] && break
+
+    if [ -d "$clean" ]; then
+        # Enter/Right — enter directory, stay in nav
+        cd "$clean"
+        continue
+    else
+        # Right on a file — ignore, stay in nav
+        [ "$key" = "right" ] && continue
+        # Enter on a file — print path for the wrapper to open
+        echo "OPEN:$(pwd)/$clean"
+        break
+    fi
+done
+
+pwd
