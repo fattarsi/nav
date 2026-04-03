@@ -4,8 +4,21 @@
 set -e
 
 REPO="fattarsi/nav"
-INSTALL_DIR="${INSTALL_DIR:-$HOME/bin}"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 SHELL_NAME=$(basename "$SHELL")
+
+# Check dependencies
+if ! command -v fzf &>/dev/null; then
+    echo "fzf is required but not installed."
+    echo "  https://github.com/junegunn/fzf#installation"
+    exit 1
+fi
+
+if ! command -v file &>/dev/null; then
+    echo "warning: 'file' command not found — binary file detection in preview will be skipped"
+fi
+
+echo "note: a Nerd Font is recommended for file icons — https://www.nerdfonts.com"
 
 mkdir -p "$INSTALL_DIR"
 

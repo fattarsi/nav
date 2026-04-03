@@ -85,7 +85,16 @@ while true; do
             else
                 case "${item,,}" in
                     *.png|*.jpg|*.jpeg|*.gif|*.bmp|*.webp|*.tiff|*.svg)
-                        kitty +kitten icat --clear --transfer-mode=memory --unicode-placeholder --stdin=no --place=${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}@0x0 "$item"
+                        if command -v kitty &>/dev/null; then
+                            kitty +kitten icat --clear --transfer-mode=memory --unicode-placeholder --stdin=no --place=${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}@0x0 "$item" 2>/dev/null
+                        elif command -v chafa &>/dev/null; then
+                            chafa -s "${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}" "$item"
+                        else
+                            echo "[image]"
+                            file -b "$item" 2>/dev/null
+                            echo ""
+                            ls -lh "$item" 2>/dev/null | awk "{print \$5}"
+                        fi
                         ;;
                     *)
                         if file --mime-encoding "$item" 2>/dev/null | grep -q binary; then
