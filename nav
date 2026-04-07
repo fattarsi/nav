@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # nav - fuzzy file browser
 # Type to filter, Enter to enter dir or open file
 # Backspace (empty) / Left to go up, Shift-Tab to exit, Ctrl-L toggle hidden, Esc to quit
