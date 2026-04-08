@@ -5,19 +5,19 @@ A fuzzy file browser for the terminal. Type to filter, navigate directories with
 Built on [fzf](https://github.com/junegunn/fzf).
 
 ```
-  ╭ 󰉋 /home/user/projects/myapp ──────────────────────────────────────╮
-  │  3 dirs  6 files                                                   │
-  │  ────────────────────┬─ 󰈔 preview ────────────────────────────── │
-  │  ▌ 󰝰 src/            │ import express from 'express'              │
-  │    󰝰 tests/          │ import { db } from './db'                  │
-  │    󰝰 docs/           │                                            │
-  │    󰝰 index.ts        │ const app = express()                      │
-  │     config.toml      │ const port = process.env.PORT ?? 3000      │
-  │     Makefile         │                                            │
-  │     README.md        │ app.get('/', (req, res) => {               │
-  │     package.json     │   res.send('ok')                           │
-  │     .gitignore       │ })                                         │
-  ╰──────────────────────┴─────────────────────────────────────────────╯
+╭─ /home/user/projects/myapp ─────────────────────────────────────────╮
+│  3 dirs  6 files                                                    │
+│────────────────────────┬─ preview ──────────────────────────────────│
+│  > src/                │ import express from 'express'              │
+│    tests/              │ import { db } from './db'                  │
+│    docs/               │                                           │
+│    index.ts            │ const app = express()                      │
+│    config.toml         │ const port = process.env.PORT ?? 3000      │
+│    Makefile            │                                           │
+│    README.md           │ app.get('/', (req, res) => {               │
+│    package.json        │   res.send('ok')                           │
+│    .gitignore          │ })                                         │
+╰────────────────────────┴────────────────────────────────────────────╯
 ```
 
 ## Features
@@ -114,11 +114,11 @@ n
 Filter by typing — results narrow as you type:
 
 ```
-  ╭ 󰉋 /home/user/projects/myapp ───╮
-  │  main                           │
-  │  ▌  src/main.rs                 │
-  │     tests/test_main.py          │
-  ╰─────────────────────────────────╯
+╭─ /home/user/projects/myapp ───╮
+│  main                         │
+│  > src/main.rs                │
+│    tests/test_main.py         │
+╰───────────────────────────────╯
 ```
 
 Enter a directory with `Enter` or `Tab`, then keep browsing. When you find where you want to be, hit `Shift+Tab` to drop into that directory in your shell.
