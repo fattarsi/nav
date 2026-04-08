@@ -70,18 +70,36 @@ while true; do
         entries=$(ls -1ap | grep -v '^\.' | add_icons)
     fi
 
+    # Count dirs and files for status
+    dir_count=$(echo "$entries" | grep '/$' | wc -l)
+    file_count=$(echo "$entries" | grep -v '/$' | grep -v '^$' | wc -l)
+    hidden_flag=""
+    $show_hidden && hidden_flag=" 󰈈"
+
     sel=$(echo "$entries" | SHELL=/bin/bash fzf \
         --reverse \
         --no-sort \
-        --header="$(pwd)" \
-        --prompt="nav> " \
+        --prompt=" " \
+        --pointer="▌" \
+        --marker="▌" \
         --expect="ctrl-l,shift-tab,tab,left,right" \
         --bind="backward-eof:execute-silent(touch /tmp/nav_up_$$)+abort" \
-        --color="header:blue" \
+        --border=rounded \
+        --border-label=" 󰉋 $(pwd) " \
+        --border-label-pos=3 \
+        --preview-label=" 󰈔 preview " \
+        --preview-label-pos=3 \
+        --header=" ${dir_count} dirs  ${file_count} files${hidden_flag}" \
+        --color="bg:#0a0a0a,bg+:#1a1a2e,fg:#7a7a8a,fg+:#e2e4e8" \
+        --color="hl:#5cb85c,hl+:#8be9fd,info:#6272a4,prompt:#50fa7b" \
+        --color="pointer:#50fa7b,marker:#50fa7b,spinner:#6272a4" \
+        --color="header:#5c6370,border:#505060,label:#8be9fd" \
+        --color="preview-border:#505060,preview-label:#8be9fd" \
         --preview='
             item=$(echo {} | sed "s/^[^ ]* //" | sed "s:/$::")
             if [ -d "$item" ]; then
-                ls -1p "$item"
+                printf "\033[36m── contents ──\033[0m\n"
+                ls -1p "$item" | head -50
             else
                 case "${item,,}" in
                     *.png|*.jpg|*.jpeg|*.gif|*.bmp|*.webp|*.tiff|*.svg)
@@ -98,7 +116,7 @@ while true; do
                         ;;
                     *)
                         if file --mime-encoding "$item" 2>/dev/null | grep -q binary; then
-                            echo "[binary file]"
+                            printf "\033[33m[binary]\033[0m "
                             file -b "$item" 2>/dev/null
                             echo ""
                             ls -lh "$item" 2>/dev/null | awk "{print \$5}"
@@ -109,7 +127,7 @@ while true; do
                 esac
             fi
         ' \
-        --preview-window=right:75% \
+        --preview-window=right:75%,border-left \
         )
 
     rc=$?
